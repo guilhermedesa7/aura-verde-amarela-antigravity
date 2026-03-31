@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // 1. Aceitar apenas requisições POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -11,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('--- START APPMAX WEBHOOK ---');
     console.log('Payload Received:', JSON.stringify(body, null, 2));
 
-    // Basic validation to ensure the payload has the expected format
+    // Basic validation
     if (!body || !body.data) {
       console.warn('Invalid webhook payload structure - missing data object');
       return res.status(400).json({ error: 'Invalid payload structure' });
@@ -19,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const payloadData = body.data;
 
-    // Normalizing main fields into an internal object
+    // Normalização dos principais campos
     const normalizedData = {
       source: 'appmax',
       event: body.event || 'unknown',
@@ -39,22 +40,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ==========================================
     // FUTURAS IMPLEMENTAÇÕES:
-    // ==========================================
     /*
-      // 1. Salvar no banco de dados o log do evento
       await db.webhookLogs.create({ data: normalizedData });
       
-      // 2. Atualizar o status do pedido no banco de dados
-      if (normalizedData.status === 'aprovado' || normalizedData.status === 'approved' || normalizedData.status === 'paid') {
-        await db.order.update({ 
-          where: { id: normalizedData.orderId }, 
-          data: { status: 'PAID' } 
-        });
-        
-        // 3. Liberar produto
+      if (['aprovado', 'approved', 'paid'].includes(normalizedData.status?.toLowerCase())) {
+        await db.order.update({ where: { id: normalizedData.orderId }, data: { status: 'PAID' } });
         await platformService.grantAccess(normalizedData.customerId, normalizedData.orderId);
-        
-        // 4. Enviar email de confirmação
         await emailService.sendPaymentConfirmation(normalizedData.customerEmail, normalizedData.orderId);
       }
     */
