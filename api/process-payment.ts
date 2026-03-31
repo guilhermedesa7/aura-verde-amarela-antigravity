@@ -16,8 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cleanCpf = documentNumber ? documentNumber.replace(/\D/g, '') : undefined;
 
     // NEW ENDPOINT LOGIC:
-    // ALWAYS USE the generic endpoint in Appmax V3 if we are sending the nested `payment` object!
-    const endpoint = 'https://admin.appmax.com.br/api/v3/payment';
+    // API V3 Official Endpoints per Payment Type
+    let endpoint = 'https://admin.appmax.com.br/api/v3/payment';
     
     // Strict Nested Payload required by Appmax V3 validation
     const paymentBody: any = {
@@ -31,20 +31,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     if (paymentMethod === 'credit_card') {
+      endpoint += '/credit-card';
       if (cardData) {
         paymentBody.payment = {
-          credit_card: {
+          CreditCard: {
             document_number: cleanCpf,
             installments: cardData.installments || 1,
-            card_number: cardData.number.replace(/\s/g, ''),
-            card_name: cardData.name,
-            card_expiration_month: cardData.expiry.split('/')[0],
-            card_expiration_year: '20' + cardData.expiry.split('/')[1],
-            card_cvv: cardData.cvv,
+            number: cardData.number.replace(/\s/g, ''),
+            name: cardData.name,
+            month: cardData.expiry.split('/')[0],
+            year: '20' + cardData.expiry.split('/')[1],
+            cvv: cardData.cvv,
           }
         };
       }
     } else if (paymentMethod === 'pix') {
+      endpoint += '/pix';
       if (cleanCpf) {
         paymentBody.payment = {
           pix: {
@@ -53,9 +55,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       }
     } else if (paymentMethod === 'boleto') {
+      endpoint += '/boleto';
       if (cleanCpf) {
         paymentBody.payment = {
-          boleto: {
+          Boleto: {
             document_number: cleanCpf
           }
         };
