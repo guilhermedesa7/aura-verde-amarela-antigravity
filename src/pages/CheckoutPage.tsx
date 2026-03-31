@@ -64,7 +64,8 @@ const CheckoutPage = () => {
         customerRes.customerId,
         paymentMethod,
         cartTotal(),
-        cardData
+        cardData,
+        form.cpf
       );
 
       trackEvent('Purchase', { value: cartTotal(), currency: 'BRL', method: paymentMethod });

@@ -11,21 +11,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { orderId, customerId, paymentMethod, cardData, total } = req.body;
+    const { orderId, customerId, paymentMethod, cardData, documentNumber, total } = req.body;
 
-    // ----------------------------------------------------
-    // OLD ENDPOINT (for logs): https://admin.appmax.com.br/api/v3/payment
-    // OLD PAYLOAD (for logs): { "access-token": API_KEY, "order_id": orderId, "customer_id": customerId, "payment_type": "pix" (or "Pix") }
-    // ----------------------------------------------------
+    const cleanCpf = documentNumber ? documentNumber.replace(/\D/g, '') : undefined;
 
     // NEW ENDPOINT LOGIC:
     let endpoint = 'https://admin.appmax.com.br/api/v3/payment';
     
-    // Default payload matching standard generic endpoint or specific endpoints
+    // Strict Nested Payload required by Appmax V3 specific endpoints
     const paymentBody: any = {
       'access-token': API_KEY,
-      cart: orderId, // The Order ID field in Appmax V3 is 'cart'
-      customer_id: customerId,
+      cart: {
+        order_id: orderId
+      },
+      customer: {
+        customer_id: customerId
+      }
     };
 
     if (paymentMethod === 'credit_card') {
@@ -33,6 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (cardData) {
         paymentBody.payment = {
           CreditCard: {
+            document_number: cleanCpf,
             installments: cardData.installments || 1,
             card_number: cardData.number.replace(/\s/g, ''),
             card_name: cardData.name,
@@ -44,13 +46,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     } else if (paymentMethod === 'pix') {
       endpoint += '/pix';
-      // For Pix, sending cart and customer_id is usually sufficient. 
-      // Some versions of Appmax don't require `document_number` if customer_id matches a profile with a document.
+      if (cleanCpf) {
+        paymentBody.payment = {
+          Pix: {
+            document_number: cleanCpf
+          }
+        };
+      }
     } else if (paymentMethod === 'boleto') {
       endpoint += '/boleto';
-    } else {
-      // Fallback if none matches
-      paymentBody.payment_type = paymentMethod;
+      if (cleanCpf) {
+        paymentBody.payment = {
+          Boleto: {
+            document_number: cleanCpf
+          }
+        };
+      }
     }
 
     console.log('--- START APPMAX PAYMENT ---');
