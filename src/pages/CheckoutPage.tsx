@@ -132,7 +132,18 @@ const CheckoutPage = () => {
             <>
               <QrCode className="w-16 h-16 text-primary mx-auto mb-4" />
               <h1 className="font-display text-2xl font-bold tracking-tight uppercase mb-4">Pague com PIX</h1>
-              {pixData.qrcode && <img src={pixData.qrcode} alt="QR Code PIX" className="mx-auto w-64 h-64 mb-4 rounded-lg" />}
+              {pixData?.qrcode && (
+                <img
+                  src={pixData.qrcode.includes('data:image') || pixData.qrcode.startsWith('http') ? pixData.qrcode : `data:image/png;base64,${pixData.qrcode}`}
+                  alt="QR Code PIX"
+                  className="mx-auto w-56 h-56 object-contain mb-4 rounded-lg"
+                />
+              )}
+              {!pixData?.qrcode && (
+                <div className="mx-auto w-56 h-56 mb-4 rounded-lg bg-muted flex items-center justify-center border border-border">
+                  <span className="text-sm text-muted-foreground text-center px-4">QR Code indisponível.<br/>Use o código Copia e Cola abaixo.</span>
+                </div>
+              )}
               {pixData.code && (
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-2">Copie o código PIX:</p>
