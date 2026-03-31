@@ -17,6 +17,8 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qrcode?: string; code?: string } | null>(null);
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -29,6 +31,8 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+    setGeneralError(null);
     setLoading(true);
 
     try {
@@ -90,7 +94,20 @@ const CheckoutPage = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao processar pagamento. Tente novamente.');
+      const errorMsg = error.message || 'Erro ao processar pagamento. Tente novamente.';
+      const msgLower = errorMsg.toLowerCase();
+      const newErrors: Record<string, string> = {};
+      
+      if (msgLower.includes('cpf') || msgLower.includes('document')) newErrors.cpf = errorMsg;
+      else if (msgLower.includes('email') || msgLower.includes('e-mail')) newErrors.email = errorMsg;
+      else if (msgLower.includes('cep') || msgLower.includes('postcode')) newErrors.cep = errorMsg;
+      else if (msgLower.includes('cartão') || msgLower.includes('cartao') || msgLower.includes('credit') || msgLower.includes('cvv') || msgLower.includes('mês') || msgLower.includes('ano')) newErrors.cardNumber = errorMsg;
+      else if (msgLower.includes('phone') || msgLower.includes('telefone') || msgLower.includes('mobile')) newErrors.phone = errorMsg;
+      else if (msgLower.includes('name') || msgLower.includes('nome') || msgLower.includes('firstname') || msgLower.includes('lastname')) newErrors.name = errorMsg;
+      else setGeneralError(errorMsg);
+
+      setFormErrors(newErrors);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -185,21 +202,41 @@ const CheckoutPage = () => {
 
         <div className="grid lg:grid-cols-5 gap-8">
           <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-6">
+            {generalError && (
+              <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg text-sm mb-2">
+                {generalError}
+              </div>
+            )}
             {/* Dados Pessoais */}
             <div className="bg-card rounded-lg p-6 border border-border space-y-4">
               <h2 className="font-display text-lg tracking-wider uppercase">Dados Pessoais</h2>
               <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="Nome completo" required value={form.name} onChange={e => updateForm('name', e.target.value)} className="col-span-2 h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
-                <input type="email" placeholder="E-mail" required value={form.email} onChange={e => updateForm('email', e.target.value)} className="col-span-2 h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
-                <input type="tel" placeholder="Telefone" required value={form.phone} onChange={e => updateForm('phone', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
-                <input type="text" placeholder="CPF" required value={form.cpf} onChange={e => updateForm('cpf', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
+                <div className="col-span-2">
+                  <input type="text" placeholder="Nome completo" required value={form.name} onChange={e => updateForm('name', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.name ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                  {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                </div>
+                <div className="col-span-2">
+                  <input type="email" placeholder="E-mail" required value={form.email} onChange={e => updateForm('email', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.email ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                  {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                </div>
+                <div>
+                  <input type="tel" placeholder="Telefone" required value={form.phone} onChange={e => updateForm('phone', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.phone ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                  {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                </div>
+                <div>
+                  <input type="text" placeholder="CPF" required value={form.cpf} onChange={e => updateForm('cpf', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.cpf ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                  {formErrors.cpf && <p className="text-red-500 text-xs mt-1">{formErrors.cpf}</p>}
+                </div>
               </div>
             </div>
 
             {/* Endereço */}
             <div className="bg-card rounded-lg p-6 border border-border space-y-4">
               <h2 className="font-display text-lg tracking-wider uppercase">Endereço</h2>
-              <input type="text" placeholder="CEP" required value={form.cep} onChange={e => updateForm('cep', e.target.value)} className="w-full h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
+              <div>
+                <input type="text" placeholder="CEP" required value={form.cep} onChange={e => updateForm('cep', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.cep ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                {formErrors.cep && <p className="text-red-500 text-xs mt-1">{formErrors.cep}</p>}
+              </div>
               <input type="text" placeholder="Rua, número" required value={form.street} onChange={e => updateForm('street', e.target.value)} className="w-full h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
               <div className="grid grid-cols-3 gap-4">
                 <input type="text" placeholder="Complemento" value={form.complement} onChange={e => updateForm('complement', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
@@ -233,8 +270,12 @@ const CheckoutPage = () => {
               {paymentMethod === 'credit_card' && (
                 <div className="space-y-4 pt-2">
                   <input type="text" placeholder="Nome no cartão" required value={form.cardName} onChange={e => updateForm('cardName', e.target.value)} className="w-full h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
-                  <input type="text" placeholder="Número do cartão" required value={form.cardNumber} onChange={e => updateForm('cardNumber', e.target.value)} className="w-full h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
+                  <div>
+                    <input type="text" placeholder="Número do cartão" required value={form.cardNumber} onChange={e => updateForm('cardNumber', e.target.value)} className={`w-full h-12 bg-muted border ${formErrors.cardNumber ? 'border-red-500' : 'border-border'} rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors`} />
+                    {formErrors.cardNumber && <p className="text-red-500 text-xs mt-1">{formErrors.cardNumber}</p>}
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
+
                     <input type="text" placeholder="MM/AA" required value={form.cardExpiry} onChange={e => updateForm('cardExpiry', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
                     <input type="text" placeholder="CVV" required value={form.cardCvv} onChange={e => updateForm('cardCvv', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors" />
                     <select value={form.installments} onChange={e => updateForm('installments', e.target.value)} className="h-12 bg-muted border border-border rounded-lg px-4 text-sm text-foreground focus:border-primary focus:outline-none transition-colors">

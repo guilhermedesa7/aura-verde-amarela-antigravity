@@ -1,5 +1,15 @@
 const API_BASE = '/api';
 
+const extractAppmaxError = (data: any, defaultMsg: string) => {
+  if (!data) return defaultMsg;
+  if (data.details?.text) return data.details.text;
+  if (data.details?.message) return data.details.message;
+  if (data.text) return data.text;
+  if (data.message) return data.message;
+  if (data.error) return data.error;
+  return defaultMsg;
+};
+
 interface CustomerData {
   name: string;
   email: string;
@@ -36,7 +46,7 @@ export async function createCustomer(customer: CustomerData) {
     body: JSON.stringify(customer),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erro ao criar cliente');
+  if (!res.ok) throw new Error(extractAppmaxError(data, 'Erro ao criar cliente'));
   return data;
 }
 
@@ -47,7 +57,7 @@ export async function createOrder(customerId: string, items: CartItemData[], tot
     body: JSON.stringify({ customerId, items, total }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erro ao criar pedido');
+  if (!res.ok) throw new Error(extractAppmaxError(data, 'Erro ao criar pedido'));
   return data;
 }
 
@@ -65,6 +75,6 @@ export async function processPayment(
     body: JSON.stringify({ orderId, customerId, paymentMethod, total, cardData, documentNumber }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erro no pagamento');
+  if (!res.ok) throw new Error(extractAppmaxError(data, 'Erro no pagamento'));
   return data;
 }
