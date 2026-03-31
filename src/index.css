@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 10% 8%;
+    --foreground: 45 10% 92%;
+
+    --card: 210 8% 12%;
+    --card-foreground: 45 10% 92%;
+
+    --popover: 210 8% 12%;
+    --popover-foreground: 45 10% 92%;
+
+    --primary: 46 80% 52%;
+    --primary-foreground: 210 10% 8%;
+
+    --secondary: 152 45% 22%;
+    --secondary-foreground: 45 10% 92%;
+
+    --muted: 210 8% 16%;
+    --muted-foreground: 210 8% 55%;
+
+    --accent: 152 45% 22%;
+    --accent-foreground: 45 10% 92%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 8% 20%;
+    --input: 210 8% 20%;
+    --ring: 46 80% 52%;
+
+    --radius: 0.5rem;
+
+    --gold: 46 80% 52%;
+    --gold-light: 46 80% 65%;
+    --gold-dark: 46 80% 40%;
+    --brasil-green: 152 45% 22%;
+    --brasil-green-light: 152 40% 35%;
+    --brasil-blue: 215 60% 18%;
+    --graphite: 210 8% 12%;
+    --graphite-light: 210 8% 18%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(46 80% 52%), hsl(46 80% 65%));
+    --gradient-dark: linear-gradient(180deg, hsl(210 10% 8%), hsl(210 8% 5%));
+    --gradient-green: linear-gradient(135deg, hsl(152 45% 22%), hsl(152 40% 35%));
+    --shadow-gold: 0 4px 30px -8px hsl(46 80% 52% / 0.3);
+    --shadow-card: 0 8px 40px -12px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 210 8% 10%;
+    --sidebar-foreground: 45 10% 92%;
+    --sidebar-primary: 46 80% 52%;
+    --sidebar-primary-foreground: 210 10% 8%;
+    --sidebar-accent: 152 45% 22%;
+    --sidebar-accent-foreground: 45 10% 92%;
+    --sidebar-border: 210 8% 20%;
+    --sidebar-ring: 46 80% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, hsl(46 80% 52%), hsl(46 80% 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, hsl(46 80% 52%), hsl(46 80% 65%));
+  }
+  .bg-gradient-green {
+    background: linear-gradient(135deg, hsl(152 45% 22%), hsl(152 40% 35%));
+  }
+  .bg-gradient-dark {
+    background: linear-gradient(180deg, hsl(210 10% 8%), hsl(210 8% 4%));
+  }
+  .shadow-gold {
+    box-shadow: 0 4px 30px -8px hsl(46 80% 52% / 0.3);
+  }
+  .shadow-card-premium {
+    box-shadow: 0 8px 40px -12px hsl(0 0% 0% / 0.5);
+  }
+  .border-gold {
+    border-color: hsl(46 80% 52% / 0.3);
+  }
+}
