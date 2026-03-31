@@ -69,15 +69,24 @@ const CheckoutPage = () => {
 
       trackEvent('Purchase', { value: cartTotal(), currency: 'BRL', method: paymentMethod });
 
-      if (paymentMethod === 'pix' && paymentRes.pix_qrcode) {
-        setPixData({ qrcode: paymentRes.pix_qrcode, code: paymentRes.pix_code });
+      if (paymentMethod === 'pix') {
+        const qrcode = paymentRes.pix_qrcode || paymentRes.data?.pix_qrcode || paymentRes.data?.qr_code;
+        const code = paymentRes.pix_code || paymentRes.data?.pix_emv || paymentRes.data?.emv;
+        setPixData({ qrcode, code });
         setStep('processing');
-      } else if (paymentMethod === 'boleto' && paymentRes.boleto_url) {
-        setBoletoUrl(paymentRes.boleto_url);
+      } else if (paymentMethod === 'boleto') {
+        const url = paymentRes.boleto_url || paymentRes.data?.boleto_url || paymentRes.data?.pdf;
+        setBoletoUrl(url || null);
         setStep('processing');
       } else {
-        clearCart();
-        setStep('done');
+        // Para cartão: verificar se realmente foi aprovado ou está em processamento
+        const successStatuses = ['processing', 'approved', 'authorized', 'paid'];
+        if (!paymentRes.status || successStatuses.includes(paymentRes.status.toLowerCase())) {
+          clearCart();
+          setStep('done');
+        } else {
+          throw new Error(`Pagamento não aprovado (status: ${paymentRes.status}). Verifique os dados ou tente outra forma.`);
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao processar pagamento. Tente novamente.');

@@ -45,9 +45,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       paymentId: data.data?.id,
       status: data.data?.status,
-      boleto_url: data.data?.boleto_url,
+      boleto_url: data.data?.boleto_url || data.data?.pdf,
       pix_qrcode: data.data?.pix_qrcode,
-      pix_code: data.data?.pix_code,
+      pix_code: data.data?.pix_emv || data.data?.pix_code,
       data: data.data,
     });
   } catch (error: any) {
