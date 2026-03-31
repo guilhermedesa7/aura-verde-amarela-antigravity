@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { trackEvent } from '@/lib/tracking';
 import { createCustomer, createOrder, processPayment } from '@/lib/appmax';
-import { ArrowLeft, Shield, Lock, CreditCard, CheckCircle, Loader2, QrCode, FileText } from 'lucide-react';
+import { ArrowLeft, Shield, Lock, CreditCard, CheckCircle, Loader2, QrCode, FileText, Copy, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Footer from '@/components/Footer';
@@ -19,6 +19,39 @@ const CheckoutPage = () => {
   const [boletoUrl, setBoletoUrl] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Pix Enhanced UI State
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos em segundos
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (step === 'processing' && pixData) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        // FUTURO: Local ideal para implementar Polling de Status
+        // checkPaymentStatus(orderId).then(status => se 'PAID', setStep('done'))
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [step, pixData]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleCopyPix = () => {
+    if (pixData?.code) {
+      navigator.clipboard.writeText(pixData.code).then(() => {
+        setCopied(true);
+        toast.success('Código PIX copiado com sucesso!');
+        setTimeout(() => setCopied(false), 3000);
+      }).catch(() => {
+        toast.error('Erro ao copiar. Selecione o texto manualmente.');
+      });
+    }
+  };
 
   // Form state
   const [form, setForm] = useState({
@@ -143,31 +176,74 @@ const CheckoutPage = () => {
 
   if (step === 'processing') {
     return (
-      <main className="min-h-screen pt-20 flex items-center justify-center">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md px-6">
+      <main className="min-h-screen pt-20 flex items-center justify-center pb-20">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center max-w-md px-6 w-full">
           {pixData ? (
             <>
-              <QrCode className="w-16 h-16 text-primary mx-auto mb-4" />
-              <h1 className="font-display text-2xl font-bold tracking-tight uppercase mb-4">Pague com PIX</h1>
-              {pixData?.qrcode && (
-                <img
-                  src={`data:image/png;base64,${pixData.qrcode}`}
-                  alt="QR Code PIX"
-                  className="mx-auto w-56 h-56 object-contain mb-4 rounded-lg"
-                />
-              )}
-              {!pixData?.qrcode && (
-                <div className="mx-auto w-56 h-56 mb-4 rounded-lg bg-muted flex items-center justify-center border border-border">
-                  <span className="text-sm text-muted-foreground text-center px-4">QR Code indisponível.<br/>Use o código Copia e Cola abaixo.</span>
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <QrCode className="w-8 h-8 text-primary" />
                 </div>
-              )}
-              {pixData.code && (
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-2">Copie o código PIX:</p>
-                  <p className="text-sm font-mono break-all select-all">{pixData.code}</p>
+                <h1 className="font-display text-2xl font-bold tracking-tight uppercase mb-2">Pague com PIX</h1>
+                
+                <div className="inline-flex items-center gap-2 text-primary font-medium bg-primary/10 px-4 py-2 rounded-full mb-4">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-xs tracking-wider uppercase">Aguardando pagamento...</span>
                 </div>
-              )}
-              <p className="text-sm text-muted-foreground mt-4">Após o pagamento, você receberá a confirmação por e-mail.</p>
+                
+                <p className="text-sm text-muted-foreground">
+                  O código expira em <strong className="text-foreground text-lg ml-1 font-mono">{formatTime(timeLeft)}</strong>
+                </p>
+              </div>
+
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-6">
+                <p className="text-sm text-foreground font-medium mb-4">Escaneie o QR Code ou copie o código PIX abaixo</p>
+                
+                {pixData?.qrcode ? (
+                  <div className="bg-white p-2 rounded-lg inline-block mb-6 shadow-sm border border-border">
+                    <img
+                      src={`data:image/png;base64,${pixData.qrcode}`}
+                      alt="QR Code PIX"
+                      className="mx-auto w-48 h-48 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="mx-auto w-48 h-48 mb-6 rounded-lg bg-muted flex items-center justify-center border border-border">
+                    <span className="text-sm text-muted-foreground text-center px-4">QR Code indisponível. Use o código abaixo.</span>
+                  </div>
+                )}
+
+                {pixData.code && (
+                  <div className="text-left w-full relative">
+                    <div 
+                      className="bg-muted border border-border rounded-lg p-3 cursor-text hover:border-primary transition-colors group"
+                      onClick={handleCopyPix}
+                    >
+                      <textarea
+                        readOnly
+                        value={pixData.code}
+                        className="w-full text-xs font-mono bg-transparent resize-none outline-none text-muted-foreground break-all cursor-text group-hover:text-foreground transition-colors"
+                        rows={3}
+                        onClick={(e) => { e.stopPropagation(); (e.target as HTMLTextAreaElement).select(); }}
+                      />
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={handleCopyPix}
+                      className="w-full mt-3 h-12 flex items-center justify-center gap-2 bg-gradient-gold text-primary-foreground font-display tracking-wider uppercase rounded-lg hover:opacity-90 transition-opacity shadow-gold text-sm"
+                    >
+                      {copied ? (
+                        <><Check className="w-4 h-4" /> Copiado!</>
+                      ) : (
+                        <><Copy className="w-4 h-4" /> Copiar código PIX</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-xs text-muted-foreground">Após o pagamento, esta tela atualizará automaticamente, ou você receberá a confirmação por e-mail.</p>
             </>
           ) : boletoUrl ? (
             <>
