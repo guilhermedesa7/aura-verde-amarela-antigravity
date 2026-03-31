@@ -134,7 +134,7 @@ const CheckoutPage = () => {
               <h1 className="font-display text-2xl font-bold tracking-tight uppercase mb-4">Pague com PIX</h1>
               {pixData?.qrcode && (
                 <img
-                  src={pixData.qrcode.includes('data:image') || pixData.qrcode.startsWith('http') ? pixData.qrcode : `data:image/png;base64,${pixData.qrcode}`}
+                  src={`data:image/png;base64,${pixData.qrcode}`}
                   alt="QR Code PIX"
                   className="mx-auto w-56 h-56 object-contain mb-4 rounded-lg"
                 />
