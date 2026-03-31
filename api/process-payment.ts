@@ -13,40 +13,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { orderId, customerId, paymentMethod, cardData, total } = req.body;
 
+    // ----------------------------------------------------
+    // OLD ENDPOINT (for logs): https://admin.appmax.com.br/api/v3/payment
+    // OLD PAYLOAD (for logs): { "access-token": API_KEY, "order_id": orderId, "customer_id": customerId, "payment_type": "pix" (or "Pix") }
+    // ----------------------------------------------------
+
+    // NEW ENDPOINT LOGIC:
+    let endpoint = 'https://admin.appmax.com.br/api/v3/payment';
+    
+    // Default payload matching standard generic endpoint or specific endpoints
     const paymentBody: any = {
       'access-token': API_KEY,
-      order_id: orderId,
+      cart: orderId, // The Order ID field in Appmax V3 is 'cart'
       customer_id: customerId,
-      payment_type: paymentMethod, // 'credit_card', 'boleto', 'pix'
     };
 
-    if (paymentMethod === 'credit_card' && cardData) {
-      paymentBody.card_number = cardData.number.replace(/\s/g, '');
-      paymentBody.card_name = cardData.name;
-      paymentBody.card_month = cardData.expiry.split('/')[0];
-      paymentBody.card_year = '20' + cardData.expiry.split('/')[1];
-      paymentBody.card_cvv = cardData.cvv;
-      paymentBody.installments = cardData.installments || 1;
+    if (paymentMethod === 'credit_card') {
+      endpoint += '/credit-card';
+      if (cardData) {
+        paymentBody.payment = {
+          CreditCard: {
+            installments: cardData.installments || 1,
+            card_number: cardData.number.replace(/\s/g, ''),
+            card_name: cardData.name,
+            card_expiration_month: cardData.expiry.split('/')[0],
+            card_expiration_year: '20' + cardData.expiry.split('/')[1],
+            card_cvv: cardData.cvv,
+          }
+        };
+      }
+    } else if (paymentMethod === 'pix') {
+      endpoint += '/pix';
+      // For Pix, sending cart and customer_id is usually sufficient. 
+      // Some versions of Appmax don't require `document_number` if customer_id matches a profile with a document.
+    } else if (paymentMethod === 'boleto') {
+      endpoint += '/boleto';
+    } else {
+      // Fallback if none matches
+      paymentBody.payment_type = paymentMethod;
     }
 
-    console.log('--- START APPMAX PIX PAYMENT ---');
-    console.log('1. Payment Body to Appmax:', JSON.stringify(paymentBody, null, 2));
+    console.log('--- START APPMAX PAYMENT ---');
+    console.log('1. Target Endpoint:', endpoint);
+    console.log('2. Payment Body to Appmax:', JSON.stringify(paymentBody, null, 2));
 
-    const response = await fetch('https://admin.appmax.com.br/api/v3/payment', {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(paymentBody),
     });
 
-    console.log('2. HTTP Status from Appmax:', response.status);
+    console.log('3. HTTP Status from Appmax:', response.status);
 
     const rawText = await response.text();
-    console.log('3. Raw Appmax Response Text:', rawText);
+    console.log('4. Raw Appmax Response Text:', rawText);
 
     let data;
     try {
       data = JSON.parse(rawText);
-      console.log('4. Parsed JSON Object:', JSON.stringify(data, null, 2));
+      console.log('5. Parsed JSON Object:', JSON.stringify(data, null, 2));
     } catch (e) {
       console.error('Failed to parse JSON:', e);
       return res.status(500).json({ error: 'Invalid JSON from Appmax', rawText });
@@ -55,13 +80,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok || (data.status && data.status >= 400) || data.success === false || data.error) {
       return res.status(400).json({ 
         error: data.message || data.error || 'Payment failed in Appmax', 
-        details: data 
+        details: data,
+        debug_endpoint_used: endpoint,
+        debug_payload_sent: paymentBody,
       });
     }
 
     // Retorna exatamente a estrutura que a Appmax devolveu, 
     // mas também inclui os campos que o front-end espera para Pix.
-    // Assim o front-end pode ler 'paymentRes.data.pix_qrcode' se quisermos.
     return res.status(200).json({
       success: true,
       paymentId: data?.data?.id || data?.id,
@@ -70,7 +96,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pix_qrcode: data?.data?.pix_qrcode || data?.data?.pix_qrcode_url || data?.data?.qr_code || data?.pix_qrcode,
       pix_code: data?.data?.pix_emv || data?.data?.pix_code || data?.data?.emv || data?.pix_emv,
       data: data.data || data,
-      debug_raw_text: rawText
+      debug_raw_text: rawText,
+      debug_endpoint_used: endpoint,
+      debug_payload_sent: paymentBody,
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Internal server error' });
