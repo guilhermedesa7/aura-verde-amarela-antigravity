@@ -39,8 +39,7 @@ const HeroSection = () => (
         muted
         loop
         playsInline
-        className="w-full h-full object-cover"
-        poster={heroImage}
+        className="w-full h-full object-cover bg-background"
       >
         <source src="/hero-video.mp4" type="video/mp4" />
       </video>

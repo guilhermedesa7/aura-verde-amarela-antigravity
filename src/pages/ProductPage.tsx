@@ -19,6 +19,7 @@ const ProductPage = () => {
   const [added, setAdded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   if (!product) {
     return (
@@ -97,14 +98,35 @@ const ProductPage = () => {
                 </div>
               )}
               {product.video && (
-                <div className="mt-2 rounded-lg overflow-hidden">
-                  <video
-                    src={product.video}
-                    controls
-                    playsInline
-                    className="w-full rounded-lg"
-                    poster={product.images[0]}
-                  />
+                <div className="mt-2 rounded-lg overflow-hidden bg-black">
+                  {!isVideoPlaying ? (
+                    <div 
+                      className="relative w-full aspect-video cursor-pointer group"
+                      onClick={() => setIsVideoPlaying(true)}
+                    >
+                      <img 
+                        src={(product as any).videoThumbnail || product.images[0]} 
+                        alt="Assistir vídeo do produto" 
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 bg-primary/90 text-primary-foreground rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <video
+                      src={product.video}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="none"
+                      className="w-full rounded-lg"
+                    />
+                  )}
                 </div>
               )}
             </motion.div>
