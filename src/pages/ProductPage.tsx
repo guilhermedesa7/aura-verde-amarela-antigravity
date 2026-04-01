@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Shield, Truck, RotateCcw, Star, Minus, Plus, ArrowLeft, Check } from 'lucide-react';
@@ -12,6 +12,7 @@ import StockBar from '@/components/StockBar';
 
 const ProductPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const product = products.find((p) => p.id === id);
   const addToCart = useStore((s) => s.addToCart);
   const [selectedSize, setSelectedSize] = useState('M');
@@ -44,8 +45,9 @@ const ProductPage = () => {
 
   const handleBuyNow = () => {
     addToCart(product, selectedSize, quantity);
+    useStore.getState().setCartOpen(false);
     trackEvent('ClickButton', { content_id: product.id, content_name: 'buy_now' });
-    window.location.href = '/checkout';
+    navigate('/checkout');
   };
 
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
