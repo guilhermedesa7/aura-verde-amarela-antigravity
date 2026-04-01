@@ -31,6 +31,7 @@ const ProductPage = () => {
   }
 
   const handleAddToCart = () => {
+    if (!product) return;
     addToCart(product, selectedSize, quantity);
     trackEvent('AddToCart', {
       content_id: product.id,
@@ -44,10 +45,11 @@ const ProductPage = () => {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     addToCart(product, selectedSize, quantity);
-    useStore.getState().setCartOpen(false);
+    useStore.getState().setCartOpen(false); // Fecha o modal lateral do carrinho pra limpar a visão
     trackEvent('ClickButton', { content_id: product.id, content_name: 'buy_now' });
-    navigate('/checkout');
+    navigate('/checkout'); // Navegação suave via React mantendo a memória da loja e os itens salvos
   };
 
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
