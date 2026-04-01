@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Shield, Truck, RotateCcw, Star, Minus, Plus, ArrowLeft, Check } from 'lucide-react';
 import { products, useStore } from '@/lib/store';
@@ -13,6 +13,11 @@ import StockBar from '@/components/StockBar';
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
   const product = products.find((p) => p.id === id);
   const addToCart = useStore((s) => s.addToCart);
   const [selectedSize, setSelectedSize] = useState('M');
